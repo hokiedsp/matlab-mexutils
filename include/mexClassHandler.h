@@ -11,63 +11,100 @@ template <class base>
 class mexClassHandle
 {
 public:
+  /**
+   *\brief Access the managing C++ object pointer
+   *
+   * Returns a pointer to the managed object or nullptr if no object is owned. 
+   * 
+   *\returns a pointer to the managed object or nullptr if no object is owned. 
+   */
+  base *get() { return ptr_m; }
+
+  /**
+   *\brief Create new mexClassHandle
+   *
+   * All mexClassHandle objects must be created with this function. The
+   * function returns a pointer to a new mxArray object, which contains
+   * the new mexClassHandle object. To access the mexClassHandle object,
+   * use \ref getHandle(). To access the managed C++ object, use \ref
+   * getObject().
+   * 
+   * Calling this function locks the MEX function (i.e., shared library) 
+   * in memory until \ref destroy() is called on this object. Multiple
+   * mexClassHandles may be employed in an MEX function as the lock is
+   * counted; the MEX function won't be freed until all locks are released.
+   * 
+   * \param[in] ptr A pointer to an unmanaged C++ object
+   * \returns mxArray containing the pointer to the mexClassHandle which
+   *          manages \ref ptr.
+   */
+  static mxArray *create(base *ptr)
+  {
+    mexLock();
+    mxArray *out = mxCreateNumericMatrix(1, 1, mxUINT64_CLASS, mxREAL);
+    *((uint64_t *)mxGetData(out)) = reinterpret_cast<uint64_t>(new mexClassHandle<base>(ptr));
+    return out;
+  }
+
+  /**
+   * \brief Get mexClassHandle from mxArray
+   * 
+   * This function obtains a reference to the mexClassHandle object in the given mxArray and
+   * returns it after a series of successful validation.
+   * 
+   * /param[in] in A pointer to an mxArray object
+   * /returns a reference to the managing mexClassHandle object.
+   */
+  static mexClassHandle<base> &getHandle(const mxArray *in)
+  {
+    if (mxGetNumberOfElements(in) != 1 || mxGetClassID(in) != mxUINT64_CLASS || mxIsComplex(in))
+      throw mexRuntimeError("invalidMexObjectHandle", "Input must be a real uint64 scalar.");
+    mexClassHandle<base> &ptr = *reinterpret_cast<mexClassHandle<base> *>(*((uint64_t *)mxGetData(in)));
+    if (!ptr.isValid())
+      throw mexRuntimeError("invalidMexObjectHandle", "Handle not valid.");
+    return ptr;
+  }
+
+  /**
+   * \brief Get managed class object from mxArray
+   * 
+   * This function directly obtains a pointer to the managed class object in the
+   * given mxArray and returns it after a series of successful validation.
+   * 
+   * /param[in] in A pointer to an mxArray object
+   * /returns a pointer to the managing mexClassHandle object.
+   */
+  static base *getObject(const mxArray *in)
+  {
+    return mexClassHandle<base>::getHandle(in).ptr_m;
+  }
+
+  static void destroy(const mxArray *in, bool delete_obj = true)
+  {
+    mexClassHandle<base> &ref = mexClassHandle<base>::getHandle(in);
+    if (!delete_obj)
+      ref.ptr_m = NULL;
+
+    // destruct the underlying C++ class instance
+    delete &ref;
+
+    // allow MATLAB to release the MEX function
+    mexUnlock();
+  }
+
+private:
   mexClassHandle(base *ptr) : ptr_m(ptr), name_m(typeid(base).name()) { signature_m = CLASS_HANDLE_SIGNATURE; }
   ~mexClassHandle()
   {
     signature_m = 0;
-    delete ptr_m;
+    if (ptr_m) delete ptr_m;
   }
   bool isValid() { return ((signature_m == CLASS_HANDLE_SIGNATURE) && !strcmp(name_m.c_str(), typeid(base).name())); }
-  base *ptr() { return ptr_m; }
 
-private:
   uint32_t signature_m;
   std::string name_m;
   base *ptr_m;
 };
-
-template <class base>
-inline mxArray *convertPtr2Mat(base *ptr)
-{
-  mexLock();
-  mxArray *out = mxCreateNumericMatrix(1, 1, mxUINT64_CLASS, mxREAL);
-  *((uint64_t *)mxGetData(out)) = reinterpret_cast<uint64_t>(new mexClassHandle<base>(ptr));
-  return out;
-}
-
-template <class base>
-inline mexClassHandle<base> *convertMat2HandlePtr(const mxArray *in)
-{
-  if (mxGetNumberOfElements(in) != 1 || mxGetClassID(in) != mxUINT64_CLASS || mxIsComplex(in))
-    throw mexRuntimeError("invalidMexObjectHandle", "Input must be a real uint64 scalar.");
-  mexClassHandle<base> *ptr = reinterpret_cast<mexClassHandle<base> *>(*((uint64_t *)mxGetData(in)));
-  if (!ptr->isValid())
-    throw mexRuntimeError("invalidMexObjectHandle", "Handle not valid.");
-  return ptr;
-}
-
-template <class base>
-inline base *convertMat2Ptr(const mxArray *in)
-{
-  return convertMat2HandlePtr<base>(in)->ptr();
-}
-
-template <class base>
-inline void destroyObject(const mxArray *in)
-{
-  delete convertMat2HandlePtr<base>(in);
-  mexUnlock();
-}
-
-template <class base>
-inline void destroyObject(mexClassHandle<base> *in)
-{
-  if (in)
-  {
-    delete in;
-    mexUnlock();
-  }
-}
 
 /// mexClassHandler
 /// Function to handle MATLAB class member mex-function calls. The associated MATLAB class must have a (private)
@@ -162,7 +199,7 @@ void mexClassHandler(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
         }
 
         // set backend with the pointer to the newly created C++ object
-        mxSetProperty((mxArray *)prhs[0], 0, "backend", convertPtr2Mat(ptr));
+        mxSetProperty((mxArray *)prhs[0], 0, "backend", mexClassHandle<mexClass>::create(ptr));
       }
       else if (nrhs < 2 || !mxIsChar(prhs[1]))
       {
@@ -173,21 +210,19 @@ void mexClassHandler(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
         // get the action name
         std::string action = mexGetString(prhs[1]);
 
-        // get c++ object handle
-        mexClassHandle<mexClass> *handle = convertMat2HandlePtr<mexClass>(backend);
-        if (!handle)
-          throw mexRuntimeError(class_name + ":missingHandle", "Backend handle is missing.");
+        // get the C++ object (throws exception if invalid)
+        mexClass *obj = mexClassHandle<mexClass>::getObject(backend);
 
         // check for the delete action
         if (action == "delete")
         {
-          destroyObject<mexClass>(handle);
+          mexClassHandle<mexClass>::destroy(backend);
         }
         else // otherwise perform the object-specific (if run_action() is overloaded) action according to the given action
         {
           try
           {
-            if (!handle->ptr()->action_handler(prhs[0], action, nlhs, plhs, nrhs - 2, prhs + 2))
+            if (!obj->action_handler(prhs[0], action, nlhs, plhs, nrhs - 2, prhs + 2))
             {
               std::string msg("Unknown action: ");
               throw mexRuntimeError(class_name + ":unknownAction", msg + action);
