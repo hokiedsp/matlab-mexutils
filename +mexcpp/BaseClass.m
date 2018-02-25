@@ -32,7 +32,7 @@ classdef (Abstract) BaseClass < handle
 %
 %   See also
    
-   properties (SetAccess = protected, Hidden,NonCopyable,Transient)
+   properties (Access = protected, Hidden, NonCopyable, Transient)
       backend % Handle to the backend C++ class instance
    end
    
