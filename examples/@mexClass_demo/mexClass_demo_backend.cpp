@@ -12,7 +12,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
 }
 
 // The class that we are interfacing to
-class dummy : public mexFunctionClass
+class dummy : public mexSetGetClass
 {
 public:
   dummy(int nrhs, const mxArray *prhs[]) : VarA(1), VarB({1.0f, 2.0f, 3.0f}), VarC("StringVar")
@@ -32,7 +32,7 @@ public:
   virtual bool action_handler(const mxArray *mxObj, const std::string &command, int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
   {
     // try the base class action (set, get, save, load) first, returns true if action has been performed
-    if (mexFunctionClass::action_handler(mxObj, command, nlhs, plhs, nrhs, prhs))
+    if (mexSetGetClass::action_handler(mxObj, command, nlhs, plhs, nrhs, prhs))
       return true;
 
     if (command == "train")
