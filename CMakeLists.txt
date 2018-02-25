@@ -13,6 +13,10 @@ find_package(Matlab REQUIRED COMPONENTS MX_LIBRARY)
 # add inlcude folder to access the mex utility header files
 include_directories("include")
 
+if(WIN32 AND MSVC)
+  add_compile_options(/wd4996)
+endif()
+
 # first we can indicate the documentation build as an option and set it to ON by default
 option(BUILD_DOC "Build documentation" ON)
 
