@@ -1,3 +1,7 @@
+/** \file mexClassHandler.h
+ * C++ header file containing classes and function necessary to wrap C++ class with MATLAB class
+ */
+
 #pragma once
 
 #include "mexGetString.h"    // to convert char mexArray to std::string
@@ -7,7 +11,18 @@
 #include <stdint.h>
 #include <typeinfo>
 
-#define CLASS_HANDLE_SIGNATURE 0xFF00F0A5
+/**
+ * \brief Underlying wrapper class to wrap C++ object by an mxArray object
+ * 
+ * mexClassHandle is a class template to wrap a C++ object so that the object can
+ * be preserved over multiple mexFunction calls while allowing the creation of multiple
+ * objects unlike using static variables. 
+ * 
+ * The original credit for the mechanism implemented by this class goes to
+ * <A HREF="https://www.mathworks.com/matlabcentral/fileexchange/38964">
+ * Oliver Woodford's Matlab File Exchange entry</A>. The main change in mexClassHandle
+ * is the C++ object is stored within mexClassHandle rather than its pointer.
+ */
 template <class wrappedClass>
 class mexClassHandle
 {
@@ -99,10 +114,10 @@ public:
    * This function returns a reference to the wrapped class object in the
    * given mxArray and returns it after a series of successful validation.
    * 
-   * /param[in] in Pointer to wrapper mxArray object
-   * /returns a reference to the managing mexClassHandle object.
+   * \param[in] in Pointer to wrapper mxArray object
+   * \returns a reference to the managing mexClassHandle object.
    * 
-   * /throws mexRuntimeError if mxArray does not own a mexClassHandle
+   * \throws mexRuntimeError if mxArray does not own a mexClassHandle
    */
   static wrappedClass &getObject(const mxArray *in)
   {
@@ -237,7 +252,7 @@ private:
  * Note that all non-static action signature receives the MATLAB object, enabling the C++ class
  * object to interact with MATLAB class object as needed.
  * 
- * The template class `mexClass` must either inherit \ref mexFunctionClass or match its public 
+ * The template class `mexClass` must either inherit \ref mexSetGetClass or match its public 
  * member function syntax to be compatible with this function. Three member functions it must 
  * provide must have the signatures:
  * 
@@ -359,7 +374,7 @@ void mexClassHandler(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
  * \brief A near-compatible base class for mexClassHandler function
  * 
  * This class could be used as the base class or as the template for a custom class
- * to be used with \ref mexClassHandler() function. It processes 4 basic actions: set, 
+ * to be used with mexClassHandler() function. It processes 4 basic actions: set, 
  * get, save, and load. Each of which must be implemented in the derived class.
  * 
  * MATLAB signature for these actions are:
@@ -372,7 +387,7 @@ void mexClassHandler(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
  * Note that this class misses the necessary static functions: get_classname() and 
  * static_handler(). They must also be implemented in the derived class.
 */
-class mexFunctionClass
+class mexSetGetClass
 {
 public:
 /**
