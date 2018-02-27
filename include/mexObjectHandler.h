@@ -229,8 +229,8 @@ private:
 
     //  if (ptr->name_m!=typeid(wrappedClass).name()) // <-likely safe but not standard guaranteed alternative
     const char *type_name = typeid(wrappedClass).name();
-    if (!mexObjectHandle<wrappedClass>::isValidPointer(ptr->name_m) ||
-        (ptr->name_m != type_name && strcmp(ptr->name_m, type_name)))
+    if (ptr->name_m != type_name &&
+        (!mexObjectHandle<wrappedClass>::isValidPointer(ptr->name_m) || strcmp(ptr->name_m, type_name)))
       throw mexRuntimeError("invalidMexObjectHandle", "Handle is either invalid or not wrapping the intended C++ object.");
 
     return ptr;
