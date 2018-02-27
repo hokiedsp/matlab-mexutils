@@ -10,34 +10,34 @@ This respository contains various utilities for Matlab MEX development in C++:
 
 ## Matlab/C++ class Unification:
 
-### `include/mexClassHandler.h` & `+mexcpp/BaseClass.m`
+### `include/mexObjectHandler.h` & `+mexcpp/BaseClass.m`
 
 This portion is based on [Oliver Woodford's implementation of a MATLAB class to wrap a C++ class](https://www.mathworks.com/matlabcentral/fileexchange/38964). Three core templates are found in 
-mexClassHandler.h:
+mexObjectHandler.h:
 
 Type | Name | Description
 -----|------|-------------
-function|`mexClassHandler`|All-in-one template function to be called in mexFunction
-class|`mexClassHandle`|Implements C++ object wrapping mechanism. This class is transparent in a `mexClassHandler`-based MEX function.
+function|`mexObjectHandler`|All-in-one template function to be called in mexFunction
+class|`mexObjectHandle`|Implements C++ object wrapping mechanism. This class is transparent in a `mexObjectHandler`-based MEX function.
 class|`mexSetGetClass`|Base class with set/get/save/load actions
 
-`mexClassHandler` should be paired with the MATLAB base/template handle class `+mexcpp/BaseClass.m`. In general, the paired MATLAB class must have a property `backend` with attributes: `(Access = protected, Hidden, NonCopyable, Transient)`. The class should also declare the MEX function as its static member. This minimizes erroneous call to the MEX function. In `+mexcpp/BaseClass.m`, the MEX function is declared as `mexfcn`, and note that the MEX target name in `examples/@mexClass_demo/CMakeLists.txt` is also `mexfcn`.
+`mexObjectHandler` should be paired with the MATLAB base/template handle class `+mexcpp/BaseClass.m`. In general, the paired MATLAB class must have a property `backend` with attributes: `(Access = protected, Hidden, NonCopyable, Transient)`. The class should also declare the MEX function as its static member. This minimizes erroneous call to the MEX function. In `+mexcpp/BaseClass.m`, the MEX function is declared as `mexfcn`, and note that the MEX target name in `examples/@mexClass_demo/CMakeLists.txt` is also `mexfcn`.
 
 To implement a MEX function with this framework, `mexFunction` would require a single line:
 ```
 #include <mex.h>
-#include "mexClassHandler.h"
+#include "mexObjectHandler.h"
 
 class myClass;
 
 void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
 {
-  mexClassHandler<myClass>(nlhs, plhs, nrhs, prhs);
+  mexObjectHandler<myClass>(nlhs, plhs, nrhs, prhs);
 }
 ```
 Here, `myClass` is the target C++ class to be wrapped by the MATLAB class.
 
-There are several requirements to specialize `mexClassHandler` for `myClass`. First, it must have a constructor with signature:
+There are several requirements to specialize `mexObjectHandler` for `myClass`. First, it must have a constructor with signature:
 ```
 myClass(int nrhs, const mxArray *prhs[]);
 ```
@@ -45,7 +45,7 @@ The constructor arguments are passed in directly from MATLAB as described below.
 
 C++ Signature | Description
 ----------|------------
- `static std::string get_classname()`|Return the name of paired MATLAB class
+`static std::string get_classname()`|Return the name of paired MATLAB class
 `bool action_handler(const mxArray *mxObj, const std::string &action, int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]`)|Perform the specified action
 `static bool static_handler(std::string action, int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])`|Perform the specified *static* action
 
@@ -62,11 +62,15 @@ The arguments `int nlhs`, `mxArray *plhs[]`, `int nrhs`, and `const mxArray *prh
 
 Accessing member variables of the C++ backend object from MATLAB is often important, and `mexSetGetClass` implements `set` and `get` actions, which call the derived class' `set_prop` and `get_prop`, respectively. Note that this implementation is not the most efficient but may be useful to separate the set/get actions from other actions for a large-scale class object. In addition to set/get, `load` and `save` actions are suggested to be used with `saveobj` and `loadobj` MATLAB class functions.
 
+### Standalone Usage of `mexObjectHandle`
+
+`mexObjectHandle` may be used on its own without `mexObjectHandler()`. See `examples/mexCounter.cpp` and `examples/mexCounter_demo.m` for such an example. Note that the wrapped C++ "object" in this example is a plain integer to store the counter state. This demo also demonstrates that you can have multiple handles of the same MEX function. Last, *Use `onCleanup` class in MATLAB to guarantee that the MEX object gets deleted when MATLAB workspace is cleared.* As illustrated in the demo, the handle stored in a MATLAB variable could easily be overwritten and without the `onCleanup` mechanism, the C++ object gets completely lost and the lock on the MEX function will never be removed.
+
 ## Other utility header files:
 
 ### `include/mexRuntimeError.h`
 
-Derived class of C++ `std::runtime_error` to log the exception `id` in addition so that `mexClassHandler()` can catch the exception and call `mexErrMsgIdAndTxt()`.
+Derived class of C++ `std::runtime_error` to log the exception `id` in addition so that `mexObjectHandler()` can catch the exception and call `mexErrMsgIdAndTxt()`.
 
 ### `include/mexGetString.h`
 
