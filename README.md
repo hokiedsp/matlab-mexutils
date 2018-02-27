@@ -1,21 +1,21 @@
 # matlab-mexutils
 
-C++ utility headers for Matlab MEX development + cmake template
+C++ Utility Headers for Matlab MEX Development + CMake Template
 
 Also listed on Matlab File Exchange at http://www.mathworks.com/matlabcentral/fileexchange/66217
 
 This respository contains various utilities for Matlab MEX development in C++:
 
-* Matlab/C++ Class Unification
-* Other Utility header Files
-* CMake MEX Build/Install Process
+* [Unification of Matlab & C++ Classs](#unification-of-matlab--c-classs)
+* [Other Utility Header Files](#other-utility-header-files)
+* [Building MEX Functions with CMake](#building-mex-functions-with-cmake)
 
-## Matlab/C++ class Unification:
+## Unification of Matlab & C++ Classs
 
-### `include/mexObjectHandler.h` & `+mexcpp/BaseClass.m`
+### [`include/mexObjectHandler.h`](include/mexObjectHandler.h)
 
-This portion is based on [Oliver Woodford's implementation of a MATLAB class to wrap a C++ class](https://www.mathworks.com/matlabcentral/fileexchange/38964). Three core templates are found in 
-mexObjectHandler.h:
+This portion is based on [Oliver Woodford's implementation of a MATLAB class to wrap a C++ class](https://www.mathworks.com/matlabcentral/fileexchange/38964). Three templates are found in 
+[mexObjectHandler.h](include/mexObjectHandler.h):
 
 Type | Name | Description
 -----|------|-------------
@@ -23,7 +23,7 @@ function|`mexObjectHandler`|All-in-one template function to be called in mexFunc
 class|`mexObjectHandle`|Implements C++ object wrapping mechanism. This class is transparent in a `mexObjectHandler`-based MEX function.
 class|`mexSetGetClass`|Base class with set/get/save/load actions
 
-`mexObjectHandler` should be paired with the MATLAB base/template handle class `+mexcpp/BaseClass.m`. In general, the paired MATLAB class must have a property `backend` with attributes: `(Access = protected, Hidden, NonCopyable, Transient)`. The class should also declare the MEX function as its static member. This minimizes erroneous call to the MEX function. In `+mexcpp/BaseClass.m`, the MEX function is declared as `mexfcn`, and note that the MEX target name in `examples/@mexClass_demo/CMakeLists.txt` is also `mexfcn`.
+`mexObjectHandler` is designed to be paired with the MATLAB base/template handle class [`mexcpp.BaseClass`](#mexcppbaseclassm). See the section below for the specifications of the m-file.
 
 To implement a MEX function with this framework, `mexFunction` would require a single line:
 ```
@@ -51,7 +51,7 @@ C++ Signature | Description
 `bool action_handler(const mxArray *mxObj, const std::string &action, int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]`)|Perform the specified action
 `static bool static_handler(std::string action, int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])`|Perform the specified *static* action
 
-In MATLAB, the static MEX member function `mexfcn` maybe used with 4 signatures in the MATLAB class:
+In MATLAB, the static MEX member function (its default name: `mexfcn`) maybe used with 4 signatures in the MATLAB class:
 
 MATLAB Signature | Description
 -|-
@@ -62,13 +62,34 @@ MATLAB Signature | Description
 
 The arguments `int nlhs`, `mxArray *plhs[]`, `int nrhs`, and `const mxArray *prhs[]` in `action_handler()` and `static_handler()` carry `varargout` and `varargin` of their corresponding MATLAB calls.
 
+### [`+mexcpp/BaseClass.m`](+mexcpp/BaseClass.m)
+
+This abstract class is a bare-bone handle class to be paird with a MEX function running the `mexObjectHandler()` template function to wrap a C++ backend class instance.
+
+It features:
+
+* Protected `backend` property to hold a mexObjectHandle
+* Abstract protected static method `varargout = mexfcn(varargin)` to reserve the MEX function as its protected method
+* Constructor calls `obj.mexfcn(obj, varargin{:})` to create a pairing C++ object (the mexFunction implicitly store it in the `backend` property)
+* Deleter calls `obj.mexfcn(obj, 'delete')` to destroy the backend C++ object
+
+Its subclass inheriting `mex.BaseClass` must:
+
+* Pass necessary input arguments to `mexcpp.BaseClass` constructor to instantiate the C++ object
+* Although accessible, leave `backend` property alone (unless the backend needs to be recreated)
+* Implement various interface functions to perform C++ actions via mexFunction calls: `[...] = obj.mexfcn(obj, 'action', ...)` or statically `[...] = obj.mexfcn('action', ...)`
+* Use ASCII action names as `mexObjectHandler()` does not accept multi-byte characters for the action name
+
+This MATLAB class could be used as the superclass for a user's wrapper class as outline thus far, or it can be used as a template for a standalone class.
+
+### `include/mexSetGetClass.m`
 Accessing member variables of the C++ backend object from MATLAB is often important, and `mexSetGetClass` implements `set` and `get` actions, which call the derived class' `set_prop` and `get_prop`, respectively. Note that this implementation is not the most efficient but may be useful to separate the set/get actions from other actions for a large-scale class object. In addition to set/get, `load` and `save` actions are suggested to be used with `saveobj` and `loadobj` MATLAB class functions.
 
 ### Standalone Usage of `mexObjectHandle`
 
 `mexObjectHandle` may be used on its own without `mexObjectHandler()`. See `examples/mexCounter.cpp` and `examples/mexCounter_demo.m` for such an example. Note that the wrapped C++ "object" in this example is a plain integer to store the counter state. This demo also demonstrates that you can have multiple handles of the same MEX function. Last, *Use `onCleanup` class in MATLAB to guarantee that the MEX object gets deleted when MATLAB workspace is cleared.* As illustrated in the demo, the handle stored in a MATLAB variable could easily be overwritten and without the `onCleanup` mechanism, the C++ object gets completely lost and the lock on the MEX function will never be removed.
 
-## Other utility header files:
+## Other Utility Header Files
 
 ### `include/mexRuntimeError.h`
 
@@ -82,7 +103,7 @@ Defines a function `mexGetString()`, which converts `char`/`cellstr` `mxArray` t
 
 Defines `mexAllocator` class, which is a custom C++ allocator. It wraps `mxCalloc()`, `mxRealloc()`, and `mxFree()`. This allocator is useful to write a template class, which dynamically allocates memory and the allocated memory is later used in Matlab (i.e., set to an `mxArray` object) completely detached from the template class. Such template class could be written independent of Matlab with an Allocator template.
 
-## Building MEX function with CMake
+## Building MEX Functions with CMake
 
 [CMake](http://cmake.org) is one of the most widely used cross-platform build automation software, and it meshes well with MATLAB, which is also a cross-platform environment. While `mex` command in MATLAB does exactly that, configuring it becomes cumbersome quickly as the scale of the project grows. The couple features of CMake makes it very attractive platform to build MEX functions:
 
