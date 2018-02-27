@@ -54,9 +54,13 @@ public:
   template <class... Args>
   static mxArray *create(Args... args)
   {
-    mexLock();
+    // instantiate a new object (it may throw an exception if fails) and wrap it in an mxArray
     mxArray *out = mxCreateNumericMatrix(1, 1, mxUINT64_CLASS, mxREAL);
     *((uint64_t *)mxGetData(out)) = reinterpret_cast<uint64_t>(new mexObjectHandle<wrappedClass>(args...));
+
+    // lock MEX function only after successful object creation
+    mexLock();
+    
     return out;
   }
 
