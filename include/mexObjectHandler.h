@@ -253,7 +253,6 @@ private:
     void *base = (void *)((((size_t)lpAddress) / page_size) * page_size);
     /* call msync, if it returns non-zero, return false */
     return msync(base, page_size, MS_ASYNC) == 0;
-    return true;
 #endif
   }
 };
