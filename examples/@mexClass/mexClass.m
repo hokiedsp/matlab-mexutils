@@ -1,5 +1,5 @@
 %mexClass Example MATLAB class wrapper to an underlying C++ class
-classdef mexClass_demo < mexcpp.BaseClass
+classdef mexClass < mexcpp.BaseClass
    properties (Dependent,NonCopyable,Transient)
       VarA
       VarB
@@ -10,12 +10,12 @@ classdef mexClass_demo < mexcpp.BaseClass
    end
    methods (Static)
       function static_fcn()
-         mexClass_demo.mexfcn('static_fcn');
+         mexClass.mexfcn('static_fcn');
       end
    end
    methods
       %% Constructor - Create a new C++ class instance
-      function obj = mexClass_demo(varargin)
+      function obj = mexClass(varargin)
          obj = obj@mexcpp.BaseClass(varargin{:});
       end
       
@@ -49,7 +49,6 @@ classdef mexClass_demo < mexcpp.BaseClass
          obj.mexfcn(obj,'set','VarC',val);
       end
    end
-
    
    methods (Hidden)
       function B = saveobj(obj)
@@ -59,7 +58,7 @@ classdef mexClass_demo < mexcpp.BaseClass
    
    methods(Static, Hidden)
       function obj = loadobj(B)
-         obj = mexClass_demo();
+         obj = mexClass();
          obj.mexfcn(obj, 'load', B.mexdata);
       end
    end

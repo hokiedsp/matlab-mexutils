@@ -1,6 +1,6 @@
-# compile back-end mex function for mexClass_demo class
-set(MEX_FILE "mexfcn")
-set(MEX_FILE_NAME "mexClass_demo_backend.cpp")
+# compile back-end MEX function for mexClass class
+set(MEX_FILE "mexfcn") # name of MEX file
+set(MEX_FILE_NAME "mexClass_mexfcn.cpp") # source file defining mexFunction()
 
 matlab_add_mex(NAME ${MEX_FILE} SRC ${MEX_FILE_NAME})
 

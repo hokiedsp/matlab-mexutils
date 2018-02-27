@@ -1,8 +1,5 @@
 clear; close all; drawnow
 
-echo on
-cleanupObj = onCleanup(@()echo('off'));
-
 obj = mexClass_demo
 
 obj.VarA = 5; % good

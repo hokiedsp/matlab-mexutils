@@ -1,21 +1,21 @@
 #include "mex.h"
-#include "mexClassHandler.h"
+#include "mexObjectHandler.h"
 
 #include <vector>
 #include <algorithm>
 
-class dummy;
+class mexClass;
 
 void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
 {
-  mexClassHandler<dummy>(nlhs, plhs, nrhs, prhs);
+  mexObjectHandler<mexClass>(nlhs, plhs, nrhs, prhs);
 }
 
 // The class that we are interfacing to
-class dummy : public mexSetGetClass
+class mexClass : public mexSetGetClass
 {
 public:
-  dummy(int nrhs, const mxArray *prhs[]) : VarA(1), VarB({1.0f, 2.0f, 3.0f}), VarC("StringVar")
+  mexClass(int nrhs, const mxArray *prhs[]) : VarA(1), VarB({1.0f, 2.0f, 3.0f}), VarC("StringVar")
   {}
 
   static std::string get_classname() { return "mexClass_demo"; }; // must match the Matlab classname
@@ -23,7 +23,7 @@ public:
   static bool static_handler(std::string command, int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
   {
     if (command=="static_fcn")
-      dummy::static_fcn(nlhs,plhs,nrhs,prhs);
+      mexClass::static_fcn(nlhs,plhs,nrhs,prhs);
     else
       return false;
     return true;
@@ -112,7 +112,7 @@ protected:
             throw 0;
           mwSize dim = dims[0] == 1 ? dims[1] : dims[0];
           double *d_val = mxGetPr(value);
-          VarB.reserve(dim);
+          VarB.resize(dim);
           std::copy_n(d_val, dim, VarB.begin());
         }
       }
@@ -184,7 +184,7 @@ protected:
   }
 
 private:
-  // dummy variables and functions
+  // mexClass variables and functions
   int VarA;
   std::vector<double> VarB;
   std::string VarC;
