@@ -35,15 +35,6 @@ class mexObjectHandle
 {
 public:
   /**
-   *\brief Access the wrapped C++ object
-   *
-   * Returns a reference to the managed object or nullptr if no object is owned. 
-   * 
-   *\returns a reference to the managed object or nullptr if no object is owned. 
-   */
-  wrappedClass &get() { return obj_m; }
-
-  /**
    *\brief Instantiate the wrapped class and return its wrapper mxArray
    *
    * Create() function accepts variable arguments, which are then passed 
