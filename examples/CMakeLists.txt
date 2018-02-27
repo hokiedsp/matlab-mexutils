@@ -12,4 +12,4 @@ install(DIRECTORY . DESTINATION . FILES_MATCHING PATTERN "*.m") # only copy m fi
 install(TARGETS mexCounter RUNTIME DESTINATION .)
 
 # go to the subdirectory to build the mexfcn
-add_subdirectory(@mexClass_demo)
+add_subdirectory(@mexClass)
