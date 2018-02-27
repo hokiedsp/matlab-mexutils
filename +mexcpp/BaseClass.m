@@ -3,34 +3,26 @@ classdef (Abstract) BaseClass < handle
 %
 %   An abstract base class to wrap C++ backend class instance. The user backend
 %   C++ class shall inherit mexFunctionClass derived in include/mexObjectHandler.h.
-%   This Matlab base class serves to provide a concrete foundation to interact
-%   with the C++ class, implementing common functions such as backend object
-%   construction and destruction, set/get backend object properties, and
-%   save/load backend data.
+%   The MEX function is declared as mexfcn static abstract method. Derived classes
+%   must provide the MEX function as its protected method (also set its attribute 
+%   to Static and Hidden). Moreover, the MEX function must reside in the derived 
+%   classes folder (e.g., @derivedClass if the class name is "derivedClass").
 %
-%   The header file 'include/mexObjectHandler.h' defines 3 key elements to interact
-%   with this Matlab class: mexObjectHandle, mexObjectHandler, and mexFunctionClass.
+%   Also, the C++ object handle associated with mexfcn is stored in 'backend'
+%   property throughout the life of the class object.
 %
-%   The mexObjectHandle is based on Oliver Woodford's class wrapper
-%   (https://www.mathworks.com/matlabcentral/fileexchange/38964), which provides
-%   the way to store C++ pointer as a Matlab uint64 variable.
+%   The derived classes shall further interact with mexfcn using the action and 
+%   static action calls:
 %
-%   The mexObjectHandler template function requires to be specified for the user's
-%   C++ class should be the only line in the user's mexFunction(), receiving all
-%   the arguments as is. This function accepts the following Matlab syntax:
+%      varargout = obj.mexfcn(obj, 'command', varargin) - backend action
+%      varargout = obj.mexfcn('command',varargin)       - backend static action
 %
-%      backend = mexfcn(obj)                        - backend construction
-%      mexfcn(obj,'delete')                         - backend destruction
-%      varargout = mexfcn(obj, 'command', varargin) - backend action
-%      varargout = mexfcn('command',varargin)       - backend static action
-%      mexfcn(obj, 'set', 'name', value)            - backend property set
-%      value = mexfcn(obj, 'get', 'name', value)    - backend property get
-%      data = mexfcn(obj, 'save')                   - backend data save
-%      mexfcn(obj, 'load', data)                    - backend data load
+%   It is also permissible to use this file as a template for a user's own classdef
+%   instead of using it as a base class. For such use, keep backend property intact
+%   as is (directly accessed by mexObjectHandler) and match mexfcn with the compiled 
+%   MEX function name
 %
-%   Note 'delete', 'set', 'get', 'save', 'load' are the reserved action commands.
-%
-%   See also
+%   See also include/mexObjectHandler.h
    
    properties (Access = protected, Hidden, NonCopyable, Transient)
       backend % Handle to the backend C++ class instance
