@@ -61,52 +61,6 @@ public:
   }
 
   /**
-   *\brief Copy-construct the wrapped class instace and return its wrapper mxArray
-   *
-   * This create() function copy constructs the wrapped class instance, and creates 
-   * returns the wrapping mxArray object.
-   * 
-   * The created mxArray encompasses a scalar uint64 value, which is a cast
-   * of the pointer to a mexObjectHandle class instance. Before the returned
-   * mxArray is destroyed (either in MATLAB or in C++), \ref destroy() or 
-   * \ref _destroy() must be called to delete the pointed mexObjectHandle object.
-   * 
-   * \param[in] src Source class object.
-   * \returns mxArray containing the pointer to the mexObjectHandle which
-   *          wraps the copied wrapped class instance.
-   */
-  static mxArray *create(const wrappedClass &src)
-  {
-    mexLock();
-    mxArray *out = mxCreateNumericMatrix(1, 1, mxUINT64_CLASS, mxREAL);
-    *((uint64_t *)mxGetData(out)) = reinterpret_cast<uint64_t>(new mexObjectHandle<wrappedClass>(src));
-    return out;
-  }
-
-  /**
-   *\brief Move-construct the wrapped class instace and return its wrapper mxArray
-   *
-   * This create() function move constructs the wrapped class instance, and creates 
-   * returns the wrapping mxArray object.
-   * 
-   * The created mxArray encompasses a scalar uint64 value, which is a cast
-   * of the pointer to a mexObjectHandle class instance. Before the returned
-   * mxArray is destroyed (either in MATLAB or in C++), \ref destroy() or 
-   * \ref _destroy() must be called to delete the pointed mexObjectHandle object.
-   * 
-   * \param[in] src Source class object.
-   * \returns mxArray containing the pointer to the mexObjectHandle which
-   *          wraps the copied wrapped class instance.
-   */
-  static mxArray *create(wrappedClass &&src)
-  {
-    mexLock();
-    mxArray *out = mxCreateNumericMatrix(1, 1, mxUINT64_CLASS, mxREAL);
-    *((uint64_t *)mxGetData(out)) = reinterpret_cast<uint64_t>(new mexObjectHandle<wrappedClass>(src));
-    return out;
-  }
-
-  /**
    * \brief Get wrapped class object from mxArray
    * 
    * This function returns a reference to the wrapped class object in the
@@ -168,24 +122,6 @@ private:
    */
   template <class... Args>
   mexObjectHandle(Args... args) : obj_m(args...), name_m(typeid(wrappedClass).name()) {}
-
-  /**
-   * \brief mexObjectHandle construction, copy-constructing wrapped class
-   * 
-   * Instantiates the wrapped class by copy construction.
-   * 
-   * /param[in] src Source wrapped class object
-   */
-  mexObjectHandle(const wrappedClass *src) : obj_m(src), name_m(typeid(wrappedClass).name()) {}
-
-  /**
-   * \brief mexObjectHandle construction, move-constructing wrapped class
-   * 
-   * Instantiates the wrapped class by move construction.
-   * 
-   * /param[in] src Source wrapped class object
-   */
-  mexObjectHandle(wrappedClass &&src) : obj_m(src), name_m(typeid(wrappedClass).name()) {}
 
   /**
    * \brief mexObjectHandle destruction
