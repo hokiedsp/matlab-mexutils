@@ -1,15 +1,17 @@
 classdef (Abstract) BaseClass < handle
 %mexcpp.BaseClass   Base Matlab class to wrap C++ class instance
 %
-%   An abstract base class to wrap C++ backend class instance. The user backend
-%   C++ class shall inherit mexFunctionClass derived in include/mexObjectHandler.h.
-%   The MEX function is declared as mexfcn static abstract method. Derived classes
-%   must provide the MEX function as its protected method (also set its attribute 
-%   to Static and Hidden). Moreover, the MEX function must reside in the derived 
-%   classes folder (e.g., @derivedClass if the class name is "derivedClass").
+%   An abstract base class to be paird with the mexObjectHandler() template function
+%   to wrap a C++ backend class instance. The MEX function is declared as 'mexfcn'
+%   static abstract method. Derived classes must provide the MEX function as its
+%   protected method (also set its attribute to Static and Hidden). Moreover, the MEX
+%   function must reside in the derived classes folder (e.g., @derivedClass if the
+%   class name is "derivedClass"). 
 %
 %   Also, the C++ object handle associated with mexfcn is stored in 'backend'
-%   property throughout the life of the class object.
+%   property throughout the life of the class object. This property is intended to
+%   be accessed by the MEX function ONLY and the derived class should not change it
+%   at any time.
 %
 %   The derived classes shall further interact with mexfcn using the action and 
 %   static action calls:
