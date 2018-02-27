@@ -2,6 +2,8 @@
 
 C++ utility headers for Matlab MEX development + cmake template
 
+Also listed on Matlab File Exchange at http://www.mathworks.com/matlabcentral/fileexchange/66217
+
 This respository contains various utilities for Matlab MEX development in C++:
 
 * Matlab/C++ Class Unification
