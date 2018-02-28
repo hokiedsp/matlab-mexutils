@@ -51,7 +51,7 @@ There are several requirements to specialize `mexObjectHandler` for `myClass`. F
 myClass(const mxArray *mxObj, int nrhs, const mxArray *prhs[]);
 ```
 
-The first argument `mxObj` points to the MATLAB class object, and `nrhs` and `prhs` gets the `varargin` constructor arguments are passed in directly from MATLAB as described below. `myClass` must also define the following public functions:
+The first argument `mxObj` points to the MATLAB class object, and `nrhs` and `prhs` get the `varargin` constructor arguments, which are as passed in from MATLAB. `myClass` must also define the following public functions:
 
 C++ Signature | Description
 ----------|------------
@@ -59,7 +59,7 @@ C++ Signature | Description
 `bool action_handler(const mxArray *mxObj, const std::string &action, int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]`)|Perform the specified action
 `static bool static_handler(std::string action, int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])`|Perform the specified *static* action
 
-In MATLAB, the static MEX member function (its default name: `mexfcn`) maybe used with 4 signatures in the MATLAB class:
+In MATLAB, the static MEX member function (assuming its name `mexfcn` in `mexcpp.BaseClass`) is then called with the following 4 signatures from the MATLAB class:
 
 MATLAB Signature | Description
 ---|---
@@ -72,20 +72,20 @@ The arguments `int nlhs`, `mxArray *plhs[]`, `int nrhs`, and `const mxArray *prh
 
 ### [`+mexcpp/BaseClass.m`](+mexcpp/BaseClass.m)
 
-This abstract class is a bare-bone *handle* class to be paird with a MEX function running the `mexObjectHandler()` template function to wrap a C++ backend class instance.
+This abstract class is a bare-bone *handle* class to house the MEX function running `mexObjectHandler()` template function to wrap a C++ backend class instance.
 
 It features:
 
-* Protected `backend` property to hold a mexObjectHandle
+* Protected `backend` property to hold a pointer to `mexObjectHandle`
 * Abstract protected static method `varargout = mexfcn(varargin)` to reserve the MEX function as its protected method
 * Constructor calls `obj.mexfcn(obj, varargin{:})` to create a pairing C++ object (the mexFunction implicitly store it in the `backend` property)
 * Deleter calls `obj.mexfcn(obj, 'delete')` to destroy the backend C++ object
 
-Subclass inheriting `mex.BaseClass` must:
+Subclass inheriting `mexcpp.BaseClass` must:
 
 * Pass necessary input arguments to `mexcpp.BaseClass` constructor to instantiate the C++ object
-* Although accessible, leave `backend` property alone (unless the backend needs to be recreated)
-* Implement various interface functions to perform C++ actions via mexFunction calls: `[...] = obj.mexfcn(obj, 'action', ...)` or statically `[...] = obj.mexfcn('action', ...)`
+* Although accessible, leave `backend` property alone (unless the backend needs to be recreated). It is managed by `mexObjectHandler()`.
+* Implement various methods which call `obj.mexfcn()` to perform various C++ actions using the signature: `[...] = obj.mexfcn(obj, 'action', ...)` or statically `[...] = obj.mexfcn('action', ...)`
 * Use ASCII action names as `mexObjectHandler()` does not accept multi-byte characters for the action name
 
 This MATLAB class could be used as the superclass for a user's wrapper class as outline thus far, or it can be used as a template for a standalone class. Such class **must be a handle class**.
