@@ -15,7 +15,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
 class mexClass : public mexSetGetClass
 {
 public:
-  mexClass(int nrhs, const mxArray *prhs[]) : VarA(1), VarB({1.0f, 2.0f, 3.0f}), VarC("StringVar")
+  mexClass(const mxArray *mxObj, int nrhs, const mxArray *prhs[]) : VarA(1), VarB({1.0f, 2.0f, 3.0f}), VarC("StringVar")
   {}
 
   static std::string get_classname() { return "mexClass_demo"; }; // must match the Matlab classname

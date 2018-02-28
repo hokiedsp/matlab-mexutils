@@ -48,10 +48,10 @@ Here, `myClass` is the target C++ class to be wrapped by the MATLAB class.
 There are several requirements to specialize `mexObjectHandler` for `myClass`. First, it must have a constructor with signature:
 
 ```c++
-myClass(int nrhs, const mxArray *prhs[]);
+myClass(const mxArray *mxObj, int nrhs, const mxArray *prhs[]);
 ```
 
-The constructor arguments are passed in directly from MATLAB as described below. `myClass` must also define the following public functions:
+The first argument `mxObj` points to the MATLAB class object, and `nrhs` and `prhs` gets the `varargin` constructor arguments are passed in directly from MATLAB as described below. `myClass` must also define the following public functions:
 
 C++ Signature | Description
 ----------|------------

@@ -236,7 +236,7 @@ private:
  *                              int nrhs, const mxArray *prhs[]);
  * Also, its constructor must be compatible with the signature:
  * 
- *    constructor(int nrhs, const mxArray *prhs[]);
+ *    constructor(const mxArray *mxObj, int nrhs, const mxArray *prhs[]);
  * 
  * where nrhs & prhs accounts for `varargin` inputs of the create-new mexFunction call.
  */
@@ -290,7 +290,7 @@ void mexObjectHandler(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]
           throw mexRuntimeError(class_name + ":tooManyOutputArguments", "Only one argument is returned for object construction.");
 
         // set backend with the pointer to the newly created C++ object
-        mxSetProperty((mxArray *)prhs[0], 0, "backend", mexObjectHandle<mexClass>::create(nrhs - 1, prhs + 1));
+        mxSetProperty((mxArray *)prhs[0], 0, "backend", mexObjectHandle<mexClass>::create(prhs[0], nrhs - 1, prhs + 1));
       }
       else if (nrhs < 2 || !mxIsChar(prhs[1]))
       {
