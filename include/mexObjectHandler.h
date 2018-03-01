@@ -219,6 +219,7 @@ private:
  * * mexfcn(obj,varargin)          - Create a new C++ class instance and store it as a `backend` 
  *                                   MATLAB class property.
  * * mexfcn(obj,'delete')          - Destruct the C++ class instance.
+ * * mexfcn(obj,'copy',dst)        - Copy C++ object by invoking wrapped class' copy assignment operation
  * * mexfcn(obj,'action',varargin) - Perform an action
  * * mexfcn('action',varargin)     - Perform a static action
  * 
@@ -282,7 +283,7 @@ void mexObjectHandler(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]
       // attempt to convert the first argument to the object
       mxArray *backend = mxGetProperty(prhs[0], 0, "backend");
       if (!backend)
-        throw mexRuntimeError(class_name + ":unsupportedClass", "MATLAB class must have backend'' property.");
+        throw mexRuntimeError(class_name + ":unsupportedClass", "MATLAB class must have 'backend' property.");
       if (mxIsEmpty(backend))
       {
         // no backend object, create a new
@@ -308,6 +309,16 @@ void mexObjectHandler(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]
         if (action == "delete")
         {
           mexObjectHandle<mexClass>::destroy(backend);
+        }
+        else if (action=="copy")
+        {
+           if (nrhs != 3 || nlhs > 0)
+              throw mexRuntimeError(class_name + ":invalidArguments", "'copy' action takes one additional input argument and no output argument.");
+           mxArray *dst_backend = mxGetProperty(prhs[2], 0, "backend");
+           if (!dst_backend)
+              throw mexRuntimeError(class_name + ":unsupportedClass", "The argument of 'copy' action must be a class with 'backend' property.");
+           mexClass &dst_obj = mexObjectHandle<mexClass>::getObject(backend);
+           dst_obj = std::copy(obj); // invokes copy assign operator
         }
         else // otherwise perform the object-specific (if run_action() is overloaded) action according to the given action
         {
