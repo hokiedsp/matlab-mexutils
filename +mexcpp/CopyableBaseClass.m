@@ -2,29 +2,20 @@ classdef (Abstract) CopyableBaseClass < matlab.mixin.Copyable
 %mexcpp.CopyableBaseClass   Copyable base Matlab class to wrap C++ class instance
 %
 %   An abstract base class to be paird with the mexObjectHandler() template function
-%   to wrap a C++ backend class instance. The MEX function is declared as 'mexfcn'
-%   static abstract method. Derived classes must provide the MEX function as its
-%   protected method (also set its attribute to Static and Hidden). Moreover, the MEX
-%   function must reside in the derived classes folder (e.g., @derivedClass if the
-%   class name is "derivedClass"). 
+%   to wrap a C++ backend class instance. This class is near identical to 
+%   mexcpp.BaseClass, with 2 changes:
 %
-%   Also, the C++ object handle associated with mexfcn is stored in 'backend'
-%   property throughout the life of the class object. This property is intended to
-%   be accessed by the MEX function ONLY and the derived class should not change it
-%   at any time.
+%   * Based on matlab.mixin.Copyable class to enable deep copy of handle objects
+%   * Overrides copyElement protected method of matlab.mixin.Copyable to make
+%     a copy of source object.
 %
 %   The derived classes shall further interact with mexfcn using the action and 
 %   static action calls:
 %
 %      varargout = obj.mexfcn(obj, 'command', varargin) - backend action
-%      varargout = obj.mexfcn('command',varargin)       - backend static action
+%      varargout = obj.mexfcn('command', varargin)      - backend static action
 %
-%   It is also permissible to use this file as a template for a user's own classdef
-%   instead of using it as a base class. For such use, keep backend property intact
-%   as is (directly accessed by mexObjectHandler) and match mexfcn with the compiled 
-%   MEX function name
-%
-%   See also include/mexObjectHandler.h
+%   See also mexcpp.BaseClass include/mexObjectHandler.h
    
    properties (Access = protected, Hidden, NonCopyable, Transient)
       backend % Handle to the backend C++ class instance
@@ -35,7 +26,7 @@ classdef (Abstract) CopyableBaseClass < matlab.mixin.Copyable
    end
    
    methods
-      function obj = BaseClass(varargin)
+      function obj = CopyableBaseClass(varargin)
          % instantiate mex backend
          obj.mexfcn(obj, varargin{:});
       end
@@ -54,8 +45,7 @@ classdef (Abstract) CopyableBaseClass < matlab.mixin.Copyable
          cpObj = copyElement@matlab.mixin.Copyable(obj);
 
          % Make a deep copy of the C++ object
-         obj.mexfcn(obj,'copy',cpObj);
+         obj.mexfcn(obj, 'copy', cpObj);
       end
    end
-   
-   end
+end
