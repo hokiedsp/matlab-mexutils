@@ -1,5 +1,4 @@
-cmake_minimum_required(VERSION 2.4.0) 
-# for FindMatlab support (may require a later version to detect the latest Matlab release)
+cmake_minimum_required (VERSION 3.3) # for the matlab_add_mex macro
 
 # Look for MATLAB API library paths
 find_package(Matlab REQUIRED COMPONENTS MX_LIBRARY)
