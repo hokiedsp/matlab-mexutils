@@ -310,15 +310,15 @@ void mexObjectHandler(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]
         {
           mexObjectHandle<mexClass>::destroy(backend);
         }
-        else if (action=="copy")
+        else if (action == "copy")
         {
-           if (nrhs != 3 || nlhs > 0)
-              throw mexRuntimeError(class_name + ":invalidArguments", "'copy' action takes one additional input argument and no output argument.");
-           mxArray *dst_backend = mxGetProperty(prhs[2], 0, "backend");
-           if (!dst_backend)
-              throw mexRuntimeError(class_name + ":unsupportedClass", "The argument of 'copy' action must be a class with 'backend' property.");
-           mexClass &dst_obj = mexObjectHandle<mexClass>::getObject(backend);
-           dst_obj = std::copy(obj); // invokes copy assign operator
+          if (nrhs != 3 || nlhs > 0)
+            throw mexRuntimeError(class_name + ":invalidArguments", "'copy' action takes one additional input argument and no output argument.");
+          mxArray *dst_backend = mxGetProperty(prhs[2], 0, "backend");
+          if (!dst_backend)
+            throw mexRuntimeError(class_name + ":unsupportedClass", "The argument of 'copy' action must be a class with 'backend' property.");
+          mexClass &dst_obj = mexObjectHandle<mexClass>::getObject(backend);
+          dst_obj = obj;
         }
         else // otherwise perform the object-specific (if run_action() is overloaded) action according to the given action
         {
