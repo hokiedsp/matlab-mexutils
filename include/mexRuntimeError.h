@@ -15,6 +15,9 @@ public:
   mexRuntimeError(char const *ident, char const *const message) throw() : std::runtime_error(message), id_str(ident)
   {
   }
+  mexRuntimeError(char const *ident, std::string &message) throw() : std::runtime_error(message.c_str()), id_str(ident)
+  {
+  }
   mexRuntimeError(std::string &message) throw() : std::runtime_error(message.c_str())
   {
   }
