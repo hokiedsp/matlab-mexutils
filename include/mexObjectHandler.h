@@ -18,6 +18,8 @@
 #include <unistd.h>
 #endif
 
+#define MEX_ACTION_ARGUMENTS const mxArray *mxObj, int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]
+
 /**
  * \brief Underlying wrapper class to wrap C++ object by an mxArray object
  * 
