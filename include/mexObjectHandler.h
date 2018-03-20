@@ -312,6 +312,7 @@ void mexObjectHandler(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]
         {
           mexObjectHandle<mexClass>::destroy(backend);
         }
+#ifndef MEX_OBJECT_HANDLER_DISABLE_COPY
         else if (action == "copy")
         {
           if (nrhs != 3 || nlhs > 0)
@@ -320,8 +321,9 @@ void mexObjectHandler(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]
           if (!dst_backend)
             throw mexRuntimeError("mex:unsupportedClass", "The argument of 'copy' action must be a class with 'backend' property.");
           mexClass &dst_obj = mexObjectHandle<mexClass>::getObject(backend);
-          dst_obj = obj;
+          dst_obj = obj; // copy assign operator must be defined for the class
         }
+#endif
         else // otherwise perform the object-specific (if run_action() is overloaded) action according to the given action
         {
           try
