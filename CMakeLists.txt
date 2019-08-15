@@ -46,7 +46,7 @@ endif()
 set(CMAKE_INSTALL_PREFIX ${MEXCPP_DEMO_INSTALL_DIR} CACHE PATH "Install path prefix, prepended onto install directories." FORCE)
 
 # add the install targets
-install(DIRECTORY +mexcpp DESTINATION .)
+install(DIRECTORY . DESTINATION . FILES_MATCHING PATTERN "*.m") # only copy m files and ignore source files
 
 # first we can indicate the documentation build as an option and set it to ON by default
 option(BUILD_DOC "Build documentation" ON)
