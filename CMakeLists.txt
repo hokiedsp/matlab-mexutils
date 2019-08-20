@@ -8,9 +8,9 @@ option(MatlabMexutils_BuildDocs "Turn on to build Doxygen documentation")
 
 # get the MATLAB user folder (par MATHWORKS website)
 if (WIN32)
-  set(MATLAB_USER_DIR "$ENV{USERPROFILE}/Documents/MATLAB")
+  set(MATLAB_USER_DIR "$ENV{USERPROFILE}/Documents/MATLAB" CACHE PATH "Matlab User Directory")
 else()
-  set(MATLAB_USER_DIR "$ENV{home}/Documents/MATLAB")
+  set(MATLAB_USER_DIR "$ENV{home}/Documents/MATLAB" CACHE PATH "Matlab User Directory")
 endif()
 
 # Look for MATLAB API library paths
