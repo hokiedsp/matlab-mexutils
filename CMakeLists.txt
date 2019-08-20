@@ -6,6 +6,13 @@ project(matlab-mexutils)
 option(MatlabMexutils_BuildExamples "Turn on to build example MEX files")
 option(MatlabMexutils_BuildDocs "Turn on to build Doxygen documentation")
 
+# get the MATLAB user folder (par MATHWORKS website)
+if (WIN32)
+  set(MATLAB_USER_DIR "$ENV{USERPROFILE}/Documents/MATLAB" CACHE PATH "Matlab User Directory")
+else()
+  set(MATLAB_USER_DIR "$ENV{home}/Documents/MATLAB" CACHE PATH "Matlab User Directory")
+endif()
+
 # Look for MATLAB API library paths
 find_package(Matlab REQUIRED COMPONENTS MX_LIBRARY)
 # Libmex library included by default.
@@ -37,13 +44,6 @@ if (MatlabMexutils_BuildExamples)
 if (NOT MEXCPP_DEMO_INSTALL_DIR)
   # By default, installer creates `mexcpp_demo` folder in the 
   # default MATLAB folder in the user account folder.
-
-  # get the MATLAB user folder (par MATHWORKS website)
-  if (WIN32)
-    set(MATLAB_USER_DIR "$ENV{USERPROFILE}/Documents/MATLAB")
-  else()
-    set(MATLAB_USER_DIR "$ENV{home}/Documents/MATLAB")
-  endif()
 
   # Append `mexcpp_demo` to the dir
   if (NOT EXISTS ${MATLAB_USER_DIR})
