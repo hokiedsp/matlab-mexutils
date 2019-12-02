@@ -13,6 +13,14 @@ else()
   set(MATLAB_USER_DIR "$ENV{home}/Documents/MATLAB" CACHE PATH "Matlab User Directory")
 endif()
 
+# Check if pybind11 is being used directly or via add_subdirectory
+set(MEXUTILS_MASTER_PROJECT OFF)
+if (CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_SOURCE_DIR)
+  set(MEXUTILS_MASTER_PROJECT ON)
+  set(MatlabMexutils_BuildExamples CACHE BOOL OFF FORCE)
+  set(MatlabMexutils_BuildDocs CACHE BOOL OFF FORCE)
+endif()
+
 # Look for MATLAB API library paths
 find_package(Matlab REQUIRED COMPONENTS MX_LIBRARY)
 # Libmex library included by default.
@@ -40,33 +48,33 @@ target_include_directories(libmexutils INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/inc
 target_link_libraries(libmexutils INTERFACE libmex)
 
 if (MatlabMexutils_BuildExamples)
-# Set the installation directory if not already given in cache
-if (NOT MEXCPP_DEMO_INSTALL_DIR)
-  # By default, installer creates `mexcpp_demo` folder in the 
-  # default MATLAB folder in the user account folder.
+  # Set the installation directory if not already given in cache
+  if (NOT MEXCPP_DEMO_INSTALL_DIR)
+    # By default, installer creates `mexcpp_demo` folder in the 
+    # default MATLAB folder in the user account folder.
 
-  # Append `mexcpp_demo` to the dir
-  if (NOT EXISTS ${MATLAB_USER_DIR})
-    # if not found, show message and use the default CMake install directory
-    message("Matlab user directory not found at ${MATLAB_USER_DIR}")
-    message("Default CMake installation path used.")
-    set(MEXCPP_DEMO_INSTALL_DIR ${CMAKE_INSTALL_PREFIX})
-  else()
-    set(MEXCPP_DEMO_INSTALL_DIR "${MATLAB_USER_DIR}/mexcpp_demo")
+    # Append `mexcpp_demo` to the dir
+    if (NOT EXISTS ${MATLAB_USER_DIR})
+      # if not found, show message and use the default CMake install directory
+      message("Matlab user directory not found at ${MATLAB_USER_DIR}")
+      message("Default CMake installation path used.")
+      set(MEXCPP_DEMO_INSTALL_DIR ${CMAKE_INSTALL_PREFIX})
+    else()
+      set(MEXCPP_DEMO_INSTALL_DIR "${MATLAB_USER_DIR}/mexcpp_demo")
+    endif()
+
+    # put MEXCPP_DEMO_INSTALL_DIR in cache to allow user modification
+    set(MEXCPP_DEMO_INSTALL_DIR ${MEXCPP_DEMO_INSTALL_DIR} CACHE PATH "Matlab MEXCPP Demo File Installation Directory")
   endif()
 
-  # put MEXCPP_DEMO_INSTALL_DIR in cache to allow user modification
-  set(MEXCPP_DEMO_INSTALL_DIR ${MEXCPP_DEMO_INSTALL_DIR} CACHE PATH "Matlab MEXCPP Demo File Installation Directory")
-endif()
+  # force to change the CMake install folder
+  set(CMAKE_INSTALL_PREFIX ${MEXCPP_DEMO_INSTALL_DIR} CACHE PATH "Install path prefix, prepended onto install directories." FORCE)
 
-# force to change the CMake install folder
-set(CMAKE_INSTALL_PREFIX ${MEXCPP_DEMO_INSTALL_DIR} CACHE PATH "Install path prefix, prepended onto install directories." FORCE)
+  # add the install targets
+  install(DIRECTORY . DESTINATION . FILES_MATCHING PATTERN "*.m") # only copy m files and ignore source files
 
-# add the install targets
-install(DIRECTORY . DESTINATION . FILES_MATCHING PATTERN "*.m") # only copy m files and ignore source files
-
-# traverse subfolders
-add_subdirectory(examples)
+  # traverse subfolders
+  add_subdirectory(examples)
 
 endif()
 
