@@ -1,6 +1,6 @@
 # compile back-end mex function for mexClass_demo class
 matlab_add_mex(NAME mexCounter SRC mexCounter.cpp)
-target_link_directories(mexClass PRIVATE matlab-mexutils)
+target_link_libraries(mexCounter mexutils)
 
 # if the compiler is MS VisualC++, add 'mexFunction' to the exported symbols
 if(WIN32 AND MSVC)

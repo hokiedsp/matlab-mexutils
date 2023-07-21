@@ -1,10 +1,11 @@
-cmake_minimum_required(VERSION 2.4.0) 
-# for FindMatlab support (may require a later version to detect the latest Matlab release)
+cmake_minimum_required(VERSION 3.14.0)
+
 
 project(matlab-mexutils)
 
-option(MatlabMexutils_BuildExamples "Turn on to build example MEX files")
-option(MatlabMexutils_BuildDocs "Turn on to build Doxygen documentation")
+
+option(MatlabMexutils_BuildExamples "Turn on to build example MEX files" OFF)
+option(MatlabMexutils_BuildDocs "Turn on to build Doxygen documentation" OFF)
 
 # get the MATLAB user folder (par MATHWORKS website)
 if (WIN32)
@@ -13,20 +14,9 @@ else()
   set(MATLAB_USER_DIR "$ENV{home}/Documents/MATLAB" CACHE PATH "Matlab User Directory")
 endif()
 
-# Check if pybind11 is being used directly or via add_subdirectory
-set(MEXUTILS_MASTER_PROJECT OFF)
-if (CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_SOURCE_DIR)
-  set(MEXUTILS_MASTER_PROJECT ON)
-  set(MatlabMexutils_BuildExamples CACHE BOOL OFF FORCE)
-  set(MatlabMexutils_BuildDocs CACHE BOOL OFF FORCE)
-endif()
-
 # Look for MATLAB API library paths
-find_package(Matlab REQUIRED COMPONENTS MX_LIBRARY)
-# Libmex library included by default.
-# This demo target only requires MX_LIBRARY (libmx) in addition
-# add other components as needed. See Modules/FindMatlab.cmake or it 
-# documentation for other supported components. 
+# See https://cmake.org/cmake/help/latest/module/FindMatlab.html for extra components
+find_package(Matlab REQUIRED)
 
 get_filename_component(Matlab_RELEASE ${Matlab_ROOT_DIR} NAME)
 matlab_get_version_from_release_name(${Matlab_RELEASE} Matlab_VERSION)
@@ -37,20 +27,17 @@ endif()
 # turn off new Matlab class support
 set(Matlab_HAS_CPP_API 0)
 
-# interface library for mex related files
-add_library(libmex INTERFACE)
-target_include_directories(libmex INTERFACE ${Matlab_INCLUDE_DIRS})
-target_link_libraries(libmex INTERFACE ${Matlab_MEX_LIBRARY} ${Matlab_MX_LIBRARY})
-
 # header-only interface mexutils library
-add_library(libmexutils INTERFACE)
-target_include_directories(libmexutils INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/include)
-target_link_libraries(libmexutils INTERFACE libmex)
+add_library(mexutils INTERFACE)
+target_include_directories(mexutils INTERFACE
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}/include>
+  $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>)
+target_link_libraries(mexutils INTERFACE Matlab::mex Matlab::mx)
 
 if (MatlabMexutils_BuildExamples)
   # Set the installation directory if not already given in cache
   if (NOT MEXCPP_DEMO_INSTALL_DIR)
-    # By default, installer creates `mexcpp_demo` folder in the 
+    # By default, installer creates `mexcpp_demo` folder in the
     # default MATLAB folder in the user account folder.
 
     # Append `mexcpp_demo` to the dir
