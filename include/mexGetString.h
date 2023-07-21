@@ -5,7 +5,7 @@
 #include <mex.h>
 #include <string>
 
-std::string mexGetString(const mxArray *array)
+inline std::string mexGetString(const mxArray *array)
 {
   // ideally use std::codecvt but VSC++ does not support this particular template specialization as of 2017
   // mxChar *str_utf16 = mxGetChars(array);
@@ -13,7 +13,7 @@ std::string mexGetString(const mxArray *array)
   //   throw 0;
   // std::string str = std::wstring_convert<std::codecvt_utf8_utf16<mxChar>, mxChar>{}.to_bytes(str_utf16);
 
-  // convert a scalar cell-string 
+  // convert a scalar cell-string
   if (mxIsCell(array) && mxIsScalar(array))
     return mexGetString(mxGetCell(array, 0));
 
