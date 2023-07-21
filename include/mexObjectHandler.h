@@ -10,6 +10,8 @@
 #include <mex.h>
 #include <stdint.h>
 #include <typeinfo>
+#include <algorithm>
+#include <cstring>
 
 #ifdef _MSC_VER
 #include <Windows.h>
@@ -20,11 +22,11 @@
 
 /**
  * \brief Underlying wrapper class to wrap C++ object by an mxArray object
- * 
+ *
  * mexObjectHandle is a class template to wrap a C++ object so that the object can
  * be preserved over multiple mexFunction calls while allowing the creation of multiple
- * objects unlike using static variables. 
- * 
+ * objects unlike using static variables.
+ *
  * The original credit for the mechanism implemented by this class goes to
  * <A HREF="https://www.mathworks.com/matlabcentral/fileexchange/38964">
  * Oliver Woodford's Matlab File Exchange entry</A>. The main change in mexObjectHandle
@@ -37,16 +39,16 @@ public:
   /**
    *\brief Instantiate the wrapped class and return its wrapper mxArray
    *
-   * Create() function accepts variable arguments, which are then passed 
+   * Create() function accepts variable arguments, which are then passed
    * directly to the constructor of the target class, instantiating the
    * object wrapped by the mxArray.
-   * 
+   *
    * The created mxArray encompasses a scalar uint64 value, which is a cast
    * of the pointer to a mexObjectHandle class instance. Before the returned
-   * mxArray is destroyed (either in MATLAB or in C++), \ref destroy() or 
+   * mxArray is destroyed (either in MATLAB or in C++), \ref destroy() or
    * \ref _destroy() must be called to delete the pointed mexObjectHandle object.
-   * 
-   * \param[in] args Template parameter pack of arguments to be passed on to 
+   *
+   * \param[in] args Template parameter pack of arguments to be passed on to
    *                 the constructor of the wrapped class.
    * \returns mxArray containing the pointer to the mexObjectHandle which
    *          wraps the instantiated wrapped class.
@@ -60,19 +62,19 @@ public:
 
     // lock MEX function only after successful object creation
     mexLock();
-    
+
     return out;
   }
 
   /**
    * \brief Get wrapped class object from mxArray
-   * 
+   *
    * This function returns a reference to the wrapped class object in the
    * given mxArray and returns it after a series of successful validation.
-   * 
+   *
    * \param[in] in Pointer to wrapper mxArray object
    * \returns a reference to the managing mexObjectHandle object.
-   * 
+   *
    * \throws mexRuntimeError if mxArray does not own a mexObjectHandle
    */
   static wrappedClass &getObject(const mxArray *in)
@@ -82,11 +84,11 @@ public:
 
   /**
  * \brief Destruct wrapped class instance (unsafe version)
- * 
+ *
  * Destruct mexObjectHandle pointed by the mxArray. This function
  * leaves mxArray data unchanged, so care must be taken after calling this function
  * to clear the mxArray content.
- * 
+ *
  * /param[in] in Pointer to wrapper mxArray object
  */
   static void _destroy(const mxArray *in)
@@ -99,10 +101,10 @@ public:
 
   /**
    * \brief Destruct wrapped class instance
-   * 
+   *
    * Destruct mexObjectHandle pointed by the mxArray and clear the content
    * of mxArray.
-   * 
+   *
    * /param[in] in Pointer to wrapper mxArray object
    */
   static void destroy(mxArray *in)
@@ -118,10 +120,10 @@ public:
 
 private:
   /**
-   * \brief mexObjectHandle constructor 
-   * 
+   * \brief mexObjectHandle constructor
+   *
    * Instantiates the wrapped class with given arguments.
-   * 
+   *
    * /param[in] args Variable arguments for the wrapped class construction
    */
   template <class... Args>
@@ -129,7 +131,7 @@ private:
 
   /**
    * \brief mexObjectHandle destruction
-   * 
+   *
    * Clears name to make sure an attempt to access after _destroy() call yields in exception
    */
   ~mexObjectHandle() { name_m = NULL; }
@@ -139,13 +141,13 @@ private:
 
   /**
    * \brief Get mexObjectHandle from mxArray
-   * 
+   *
    * This function obtains a reference to the mexObjectHandle object in the given mxArray and
    * returns it after a series of successful validation.
-   * 
+   *
    * /param[in] in A pointer to an mxArray object
    * /returns a reference to the managing mexObjectHandle object.
-   * 
+   *
    * /throws mexRuntimeError if mxArray does not own a mexObjectHandle
    */
   static mexObjectHandle<wrappedClass> *getHandle(const mxArray *in)
@@ -161,7 +163,7 @@ private:
     //  if (ptr->name_m!=typeid(wrappedClass).name()) // <-likely safe but not standard guaranteed alternative
     const char *type_name = typeid(wrappedClass).name();
     if (ptr->name_m != type_name &&
-        (!mexObjectHandle<wrappedClass>::isValidPointer(ptr->name_m) || strcmp(ptr->name_m, type_name)))
+        (!mexObjectHandle<wrappedClass>::isValidPointer(ptr->name_m) || std::strcmp(ptr->name_m, type_name)))
       throw mexRuntimeError("invalidMexObjectHandle", "Handle is either invalid or not wrapping the intended C++ object.");
 
     return ptr;
@@ -199,45 +201,45 @@ private:
 
 /**
  * \brief Function to implement MATLAB class' C++ interface member function
- * 
- * mexObjectHandler may be a sole function call from mexFunction() to interface the MATLAB 
- * and C++ classes. The mexFunction should implement a private static member function of the 
- * wrapping MATLAB class, and the MATLAB class must have a (private) property named 
+ *
+ * mexObjectHandler may be a sole function call from mexFunction() to interface the MATLAB
+ * and C++ classes. The mexFunction should implement a private static member function of the
+ * wrapping MATLAB class, and the MATLAB class must have a (private) property named
  * 'backend' which receives the C++ class object handle using the \ref mexObjectHandle mechanism.
- * 
- * The arguments are exactly the same as mexFunction() and its arguments could be directly 
+ *
+ * The arguments are exactly the same as mexFunction() and its arguments could be directly
  * passed down to mexObjectHandler():
- * 
+ *
  * \param[in]    nlhs Number of expected output mxArrays
  * \param[inout] plhs Array of pointers to the expected output mxArrays
  * \param[in]    nrhs Number of input mxArrays
  * \param[in]    prhs Array of pointers to the input mxArrays.
- * 
- * The mexFunction based on this function interact directly with the wrapping MATLAB class, via 
+ *
+ * The mexFunction based on this function interact directly with the wrapping MATLAB class, via
  * 4 basic MATLAB function signature:
- * 
- * * mexfcn(obj,varargin)          - Create a new C++ class instance and store it as a `backend` 
+ *
+ * * mexfcn(obj,varargin)          - Create a new C++ class instance and store it as a `backend`
  *                                   MATLAB class property.
  * * mexfcn(obj,'delete')          - Destruct the C++ class instance.
  * * mexfcn(obj,'action',varargin) - Perform an action
  * * mexfcn('action',varargin)     - Perform a static action
- * 
+ *
  * Note that all non-static action signature receives the MATLAB object, enabling the C++ class
  * object to interact with MATLAB class object as needed.
- * 
- * The template class `mexClass` must either inherit \ref mexSetGetClass or match its public 
- * member function syntax to be compatible with this function. Three member functions it must 
+ *
+ * The template class `mexClass` must either inherit \ref mexSetGetClass or match its public
+ * member function syntax to be compatible with this function. Three member functions it must
  * provide must have the signatures:
- * 
+ *
  * * static std::string get_classname();
- * * bool action_handler(const mxArray *mxObj, const std::string &action, 
+ * * bool action_handler(const mxArray *mxObj, const std::string &action,
  *                       int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]);
- * * static bool static_handler(std::string action, int nlhs, mxArray *plhs[], 
+ * * static bool static_handler(std::string action, int nlhs, mxArray *plhs[],
  *                              int nrhs, const mxArray *prhs[]);
  * Also, its constructor must be compatible with the signature:
- * 
+ *
  *    constructor(const mxArray *mxObj, int nrhs, const mxArray *prhs[]);
- * 
+ *
  * where nrhs & prhs accounts for `varargin` inputs of the create-new mexFunction call.
  */
 template <class mexClass>
@@ -345,19 +347,19 @@ void mexObjectHandler(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]
 
 /**
  * \brief A near-compatible base class for mexObjectHandler function
- * 
+ *
  * This class could be used as the base class or as the template for a custom class
- * to be used with mexObjectHandler() function. It processes 4 basic actions: set, 
+ * to be used with mexObjectHandler() function. It processes 4 basic actions: set,
  * get, save, and load. Each of which must be implemented in the derived class.
- * 
+ *
  * MATLAB signature for these actions are:
- * 
+ *
  * * value = mexfcn(obj,'get',name)
  * * mexfcn(obj,'set',name,value)
  * * data = mexfcn(obj,'save')
  * * mexfcn(obj,'load',data)
- * 
- * Note that this class misses the necessary static functions: get_classname() and 
+ *
+ * Note that this class misses the necessary static functions: get_classname() and
  * static_handler(). They must also be implemented in the derived class.
 */
 class mexSetGetClass
@@ -365,7 +367,7 @@ class mexSetGetClass
 public:
   /**
  * \brief  Perform one of basic class actions
- * 
+ *
  * \param[in]    mxObj  Associated MATLAB class object
  * \param[in]    action Name of the action to be performed
  * \param[in]    nlhs   Number of expected output mxArrays
@@ -434,7 +436,7 @@ public:
 protected:
   /**
  * \brief  Set a property value
- * 
+ *
  * \param[in]    mxObj  Associated MATLAB class object
  * \param[in]    name   Name of the property
  * \param[in]    value  New property value
@@ -443,7 +445,7 @@ protected:
 
   /**
  * \brief  Get a property value
- * 
+ *
  * \param[in]    mxObj  Associated MATLAB class object
  * \param[in]    name   Name of the property
  * \returns the property value
@@ -452,7 +454,7 @@ protected:
 
   /**
  * \brief  Save C++ object's data
- * 
+ *
  * \param[in]    mxObj  Associated MATLAB class object
  * \returns mxArray containing the C++ object states
  */
@@ -460,7 +462,7 @@ protected:
 
   /**
  * \brief  Load C++ object's data
- * 
+ *
  * \param[in] mxObj  Associated MATLAB class object
  * \param[in] data   Data to reestablish the C++ object states
  */
