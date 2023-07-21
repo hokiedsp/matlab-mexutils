@@ -15,13 +15,13 @@ public:
   mexRuntimeError(char const *ident, char const *const message) throw() : std::runtime_error(message), id_str(ident)
   {
   }
-  mexRuntimeError(std::string &message) throw() : std::runtime_error(message.c_str())
+  mexRuntimeError(const std::string &message) throw() : std::runtime_error(message.c_str())
   {
   }
-  mexRuntimeError(std::string &ident, std::string &message) throw() : std::runtime_error(message.c_str()), id_str(ident)
+  mexRuntimeError(const std::string &ident, const std::string &message) throw() : std::runtime_error(message.c_str()), id_str(ident)
   {
   }
-  mexRuntimeError(std::string &ident, char const *const message) throw() : std::runtime_error(message), id_str(ident)
+  mexRuntimeError(const std::string &ident, char const *const message) throw() : std::runtime_error(message), id_str(ident)
   {
   }
   virtual char const *id() const throw() { return id_str.c_str(); }
